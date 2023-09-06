@@ -32,6 +32,8 @@ def get_flood_data() -> pd.DataFrame:
     df_flood.set_index('date', inplace=True)
     df_flood.index = pd.to_datetime(df_flood.index)
 
+    df_flood['river_discharge(m3/s)'].interpolate(method='linear', inplace=True)
+
     df_flood = df_flood.resample('H').ffill()
     return df_flood
 
@@ -101,8 +103,9 @@ def get_data_and_targets() -> pd.DataFrame:
     df_flood = get_flood_data()
 
     df = pd.merge(df_weather, df_flood, how='left', left_index=True, right_index=True)
+    df.reset_index(inplace=True)
     df['target'] = 0
-    df.loc[targets, 'target'] = 1
+    df['target'] = df['date'].dt.date.astype('str').isin(targets).astype('int')
 
     return df
 
