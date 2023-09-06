@@ -35,6 +35,7 @@ def get_flood_data() -> pd.DataFrame:
     df_flood = df_flood.resample('H').ffill()
     return df_flood
 
+
 def get_weather_data() ->pd.DataFrame:
     """Getting hourly weather data from Open Meteo API
 
@@ -75,6 +76,7 @@ def get_weather_data() ->pd.DataFrame:
 
     return df_weather
 
+
 def get_data_and_targets() -> pd.DataFrame:
     """Getting hourly weather and flood data from Open Meteo API, all together
 
@@ -103,3 +105,61 @@ def get_data_and_targets() -> pd.DataFrame:
     df.loc[targets, 'target'] = 1
 
     return df
+
+
+def get_folds(
+    df: pd.DataFrame,
+    fold_length: int,
+    fold_stride: int) -> list[pd.DataFrame]:
+    """
+    This function slides through the Time Series dataframe of shape (n_timesteps, n_features) to create folds
+    - of equal `fold_length`
+    - using `fold_stride` between each fold
+
+    Args:
+        df (pd.DataFrame): Overall dataframe
+        fold_length (int): How long each fold should be in rows
+        fold_stride (int): How many timesteps to move forward between taking each fold
+
+    Returns:
+        List[pd.DataFrame]: A list where each fold is a dataframe within
+    """
+    # $CHALLENGIFY_BEGIN
+
+    folds = []
+    for idx in range(0, len(df), fold_stride):
+        # Exits the loop as soon as the last fold index would exceed the last index
+        if (idx + fold_length) > len(df):
+            break
+        fold = df.iloc[idx:idx + fold_length, :]
+        folds.append(fold)
+    return folds
+
+
+def train_test_split(fold:pd.DataFrame,
+                     train_test_ratio: float,
+                     input_length: int) -> tuple[pd.DataFrame]:
+    """From a fold dataframe, take a train dataframe and test dataframe based on
+    the split ratio.
+    - df_train should contain all the timesteps until round(train_test_ratio * len(fold))
+    - df_test should contain all the timesteps needed to create all (X_test, y_test) tuples
+
+    Args:
+        fold (pd.DataFrame): A fold of timesteps
+        train_test_ratio (float): The ratio between train and test 0-1
+        input_length (int): How long each X_i will be
+
+    Returns:
+        Tuple[pd.DataFrame]: A tuple of two dataframes (fold_train, fold_test)
+    """
+
+    # TRAIN SET
+    last_train_idx = round(train_test_ratio * len(fold))
+    fold_train = fold.iloc[0:last_train_idx, :]
+
+    # TEST SET
+    first_test_idx = last_train_idx - input_length
+    fold_test = fold.iloc[first_test_idx:, :]
+
+
+    return (fold_train, fold_test)
