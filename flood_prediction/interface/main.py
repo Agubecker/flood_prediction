@@ -5,9 +5,9 @@ from flood_prediction.params import *
 from pathlib import Path
 
 # add this files to ml_logic folder
-from flood_prediction.data_prep import get_folds, train_test_split, get_data_with_cache
-from flood_prediction.model import init_model, compile_model, fit_model, evaluate_model
-from flood_prediction.preprocessor import preprocess_features
+from flood_prediction.ml_logic.data_prep import get_folds, train_test_split, get_data_with_cache
+from flood_prediction.ml_logic.model import init_model, compile_model, fit_model, evaluate_model
+from flood_prediction.ml_logic.preprocessor import preprocess_features
 #from flood_prediction.registry import load_model, save_model, save_results
 #from flood_prediction.registry import mlflow_run, mlflow_transition_model
 

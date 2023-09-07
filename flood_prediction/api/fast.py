@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # should I add this line?
-from flood_prediction.preprocessor import preprocess_features
+from flood_prediction.ml_logic.preprocessor import preprocess_features
 # from taxifare.ml_logic.registry import load_model
 
 app = FastAPI()
