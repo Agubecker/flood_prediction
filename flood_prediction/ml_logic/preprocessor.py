@@ -15,3 +15,5 @@ def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     df = transform_time_features(df)
 
     return df
+
+# def preprocess_features_forecast()
