@@ -1,14 +1,16 @@
 import pandas as pd
 import numpy as np
+from dateutil.parser import parse
+
 
 from flood_prediction.params import *
 from pathlib import Path
 
 # add this files to ml_logic folder
-from flood_prediction.ml_logic.data_prep import get_folds, train_test_split, get_data_with_cache
+from flood_prediction.ml_logic.data_prep import get_X_y_strides, get_folds, train_test_split, get_data_with_cache
 from flood_prediction.ml_logic.model import init_model, compile_model, fit_model, evaluate_model
 from flood_prediction.ml_logic.preprocessor import preprocess_features
-#from flood_prediction.registry import load_model, save_model, save_results
+from flood_prediction.ml_logic.registry import load_model, save_model, save_results #from flood_prediction.registry import load_model, save_model, save_results
 #from flood_prediction.registry import mlflow_run, mlflow_transition_model
 
 def preprocess() -> None:
@@ -36,14 +38,102 @@ def preprocess() -> None:
 
     print("✅ preprocess() done \n")
 
-# def train()
+def train() -> float:
+    """
+    - Train on the preprocessed dataset (which should be ordered by date)
+    - Store training results and model weights
 
-# def evaluate()
+    return
+    """
+    print("\n⭐️ Use case: train")
+    print("\nLoading preprocessed validation data...")
 
-# def pred()
+    min_date = parse(min_date).strftime('%Y-%m-%d')
+    max_date = parse(max_date).strftime('%Y-%m-%d')
+
+    # Load processed data using `get_data_with_cache` in chronological order
+    data_processed_cache_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"data_processed.csv")
+
+    data_processed = get_data_with_cache(
+        cache_path=data_processed_cache_path,
+        data_has_header=False
+    )
+
+    if data_processed.shape[0] < 10:
+        print("❌ Not enough processed data retrieved to train on")
+        return None
+
+    # Create (X_train, y_train, X_test, y_val)
+    (whole_train, whole_test) = train_test_split(data_processed, TRAIN_TEST_RATIO, INPUT_LENGTH)
+    X_train, y_train = get_X_y_strides(whole_train, INPUT_LENGTH, OUTPUT_LENGTH, HORIZON, SEQUENCE_STRIDE)
+    # X_test, y_test = get_X_y_strides(whole_test, INPUT_LENGTH, OUTPUT_LENGTH, HORIZON, SEQUENCE_STRIDE)
+
+    # Train model using `model.py`
+    model = load_model()
+
+    if model is None:
+        print("\nModel not found, starting initialization")
+
+        # init and compile
+        model = init_model(X_train, y_train)
+
+
+    # fitting model
+    model, history = fit_model(model, X_train, y_train)
+
+    val_mae = np.min(history.history['val_mae'])
+
+    # Saving metrics and params locally
+    # save_results(params=params, metrics=dict(mae=val_mae))
+
+    # Save model weight on the hard drive (and optionally on GCS too!)
+    save_model(model=model)
+
+    print("✅ train() done \n")
+
+    return val_mae
+
+def evaluate():
+    pass
+
+def pred(X_pred: pd.DataFrame = None) -> np.ndarray:
+    """
+    Make a prediction using the latest trained model
+    """
+
+    print("\n⭐️ Use case: predict")
+
+    # api_request_pred() in order to get past weather
+    # preprocess_features_forecast() in order to preprocess it
+    # connect it to front end and API
+
+    if X_pred is None:
+        X_pred = pd.DataFrame(dict(
+        date= date,
+        temperature= temperature,
+        rain= rain,
+        surface_pressure= surface_pressure,
+        radiation= radiation,
+        windspeed= windspeed,
+        winddirection= winddirection,
+        soil_moisture_0_1cm= soil_moisture_0_1cm,
+        soil_moisture_1_3cm= soil_moisture_1_3cm,
+        soil_moisture_3_9cm= soil_moisture_3_9cm,
+        soil_moisture_9_27cm= soil_moisture_9_27cm
+    ))
+
+    model = load_model()
+    assert model is not None
+
+    X_processed = preprocess_features(X_pred)
+    y_pred = model.predict(X_processed)
+
+    print("\n✅ prediction done: ", y_pred, y_pred.shape, "\n")
+
+    return y_pred
 
 if __name__ == "__main__":
     preprocess()
-    #train()
-    #evaluate()
-    #pred()
+    train()
+    # evaluate()
+    pred()

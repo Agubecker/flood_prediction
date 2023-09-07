@@ -1,5 +1,7 @@
 import pandas as pd
 import requests
+import numpy as np
+from flood_prediction.ml_logic.preprocessor import preprocess_features
 from params import *
 from pathlib import Path
 from google.cloud import bigquery
@@ -126,7 +128,6 @@ def get_folds(
     Returns:
         List[pd.DataFrame]: A list where each fold is a dataframe within
     """
-    # $CHALLENGIFY_BEGIN
 
     folds = []
     for idx in range(0, len(df), fold_stride):
@@ -179,6 +180,7 @@ def get_data_with_cache(
     else:
         print("\nLoad data from API server...")
         df = get_data_and_targets()
+        df = preprocess_features()
 
         # Store as CSV if the API returned at least one valid line
         if df.shape[0] > 1:
@@ -228,3 +230,49 @@ def load_data_to_db(
     result = job.result()  # wait for the job to complete
 
     print(f"✅ Data saved to bigquery, with shape {data.shape}")
+
+def get_X_y_strides(fold: pd.DataFrame, input_length: int, output_length: int, horizon: int,
+    sequence_stride: int) -> tuple[np.array]:
+    """slides through a `fold` Time Series (2D array) to create sequences of equal
+        * `input_length` for X,
+        * `output_length` for y,
+    using a temporal gap `sequence_stride` between each sequence
+
+    Args:
+        fold (pd.DataFrame): One single fold dataframe
+        input_length (int): Length of each X_i
+        output_length (int): Length of each y_i
+        sequence_stride (int): How many timesteps to take before taking the next X_i
+
+    Returns:
+        Tuple[np.array]: A tuple of numpy arrays (X, y)
+    """
+    X, y = [], []
+
+    for i in range(0, len(fold), sequence_stride):
+        # Exits the loop as soon as the last fold index would exceed the last index
+        if (i + input_length + output_length + horizon) >= len(fold):
+            break
+        X_i = fold.iloc[i:i + input_length, :]
+        y_i = fold.iloc[i + input_length + horizon - 1:i + input_length + horizon - 1 + output_length, :][[TARGET]]
+        X.append(X_i)
+        y.append(y_i)
+
+    return (np.array(X), np.array(y))
+
+def api_request_pred(TALAGANTE_LAT, TALAGANTE_LON):
+    url = "https://api.open-meteo.com/v1/forecast"
+
+    params = {
+        "latitude": TALAGANTE_LAT,
+        "longitude": TALAGANTE_LON,
+        "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27, cmshortwave_radiation",
+        "past_days": "14",
+        "timezone": "auto"
+    }
+
+    response = requests.get(url, params=params)
+
+    data = response.json()
+
+    return data

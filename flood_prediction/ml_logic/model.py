@@ -10,7 +10,6 @@ def init_model(X_train, y_train):
     """
     Instanciate, compile and and return a model
     """
-
     # Normalization
     normalizer = Normalization()
     normalizer.adapt(X_train)
@@ -23,14 +22,20 @@ def init_model(X_train, y_train):
     model.add(layers.LSTM(64,
                           activation='tanh',
                           return_sequences = False,
-                          kernel_regularizer=L1L2(l1=0.05, l2=0.05),
+                          #kernel_regularizer=L1L2(l1=0.05, l2=0.05),
                           ))
+
+    # Hidden Dense Layer that we are regularizing
+    reg_l2 = regularizers.L2(0.5)
+    model.add(layers.Dense(32, activation='relu', kernel_regularizer=reg_l2))
+    model.add(layers.Dropout(rate=0.5))
+
     ## Predictive Dense Layers
     output_length = y_train.shape[1]
     model.add(layers.Dense(output_length, activation='linear'))
 
     # Compiler
-    adam = optimizers.Adam(learning_rate=0.02)
+    adam = optimizers.Adam(learning_rate=0.01)
     model.compile(loss='mse', optimizer=adam, metrics=["mae"])
 
     return model
