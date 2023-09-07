@@ -1,0 +1,6 @@
+streamlit==1.26.0
+folium==0.14.0
+streamlit-folium==0.13.0
+requests
+pandas==1.4.4
+matplotlib==3.5.3
