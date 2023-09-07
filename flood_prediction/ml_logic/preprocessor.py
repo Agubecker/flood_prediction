@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from flood_prediction.encoders import transform_soil_moisture_features, transform_wind_features, transform_time_features
+from flood_prediction.ml_logic.encoders import transform_soil_moisture_features, transform_wind_features, transform_time_features
 
 def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     """Preprocessing features
