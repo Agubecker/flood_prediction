@@ -3,13 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # should I add this line?
-from taxifare.ml_logic.preprocessor import preprocess_features
-from taxifare.ml_logic.registry import load_model
+from flood_prediction.preprocessor import preprocess_features
+# from taxifare.ml_logic.registry import load_model
 
 app = FastAPI()
 
 # we need working on "load_model" function
-app.state.model = load_model()
+#app.state.model = load_model()
 
 # Allowing all middleware is optional, but good practice for dev purposes
 app.add_middleware(
@@ -54,7 +54,9 @@ def predict(
     ))
 
     X_pred = preprocess_features(X_pred)
-    y_pred = app.state.model.predict(X_pred)
+
+    # not done yet
+    #y_pred = app.state.model.predict(X_pred)
 
     return {"fare_amount": round(float(y_pred[0][0]), 2)}
 
