@@ -35,14 +35,14 @@ def flood_api_request(TALAGANTE_LAT, TALAGANTE_LON):
 
     return df
 
-def api_request(TALAGANTE_LAT, TALAGANTE_LON):
+def api_request_prediction(TALAGANTE_LAT, TALAGANTE_LON):
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {
         "latitude": TALAGANTE_LAT,
         "longitude": TALAGANTE_LON,
         "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_temperature_0cm,soil_temperature_6cm,shortwave_radiation",
-        "past_days": "3",
+        "past_days": "14",
         "timezone": "auto"
     }
 
