@@ -9,7 +9,7 @@ from flood_prediction.ml_logic.preprocessor import preprocess_features
 app = FastAPI()
 
 # we need working on "load_model" function
-#app.state.model = load_model()
+##app.state.model = load_model()
 
 # Allowing all middleware is optional, but good practice for dev purposes
 app.add_middleware(
