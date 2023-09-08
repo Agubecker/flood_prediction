@@ -269,7 +269,43 @@ def get_X_y_strides(fold: pd.DataFrame, input_length: int, output_length: int, h
 
     return (np.array(X), np.array(y))
 
-def api_request_pred():
+def get_flood_data_pred() -> pd.DataFrame:
+    """Getting river discharge data from Open Meteo API
+
+    Keyword arguments:
+    None
+    Return: river discharge data in a pandas dataframe
+    """
+
+    base_url_flood = "https://flood-api.open-meteo.com/v1/flood"
+
+    params_flood = {
+        "latitude": TALAGANTE_LAT,
+        "longitude": TALAGANTE_LON,
+        "daily": "river_discharge",
+        "past_days": "14",
+        "forecast_days":"1",
+        "models": "seamless_v4"
+    }
+
+    response_flood = requests.get(base_url_flood, params=params_flood)
+
+    raw_data_flood = response_flood.json()
+
+    df_flood = pd.DataFrame(data= raw_data_flood, columns=['date', 'river_discharge(m3/s)'])
+
+    df_flood['date'] = raw_data_flood['daily']['time']
+    df_flood['river_discharge(m3/s)'] = raw_data_flood['daily']['river_discharge']
+    df_flood.set_index('date', inplace=True)
+    df_flood.index = pd.to_datetime(df_flood.index)
+
+    df_flood['river_discharge(m3/s)'].interpolate(method='linear', inplace=True)
+
+    df_flood = df_flood.resample('H').ffill()
+
+    return df_flood
+
+def get_weather_data_pred():
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {
@@ -277,6 +313,7 @@ def api_request_pred():
         "longitude": TALAGANTE_LON,
         "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27cm,shortwave_radiation",
         "past_days": "14",
+        "forecast_days":"1",
         "timezone": "auto"
     }
 
@@ -301,3 +338,19 @@ def api_request_pred():
     df_weather['date'] = pd.to_datetime(df_weather['date'])
 
     return df_weather
+
+def api_request_pred():
+    print("Getting Weather Data")
+    df_weather = get_weather_data_pred()
+    print(df_weather.head())
+
+
+    print("Getting Flood Data")
+    df_flood = get_flood_data_pred()
+    print(df_flood.head())
+
+    print("Merging both dfs")
+    df = pd.merge(df_weather, df_flood, how='left', left_index=True, right_index=True)
+    print(df.head())
+
+    return df

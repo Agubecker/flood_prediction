@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from dateutil.parser import parse
+import tensorflow as tf
 
 from flood_prediction.params import *
 from pathlib import Path
@@ -108,7 +109,8 @@ def pred() -> np.ndarray:
     assert model is not None
 
     X_processed = preprocess_features_pred(X_pred)
-    print(X_processed.columns)
+    X_processed = tf.expand_dims(X_processed, axis=0)
+
     y_pred = model.predict(X_processed)
 
     print("\n✅ prediction done: ", y_pred, y_pred.shape, "\n")
