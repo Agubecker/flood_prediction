@@ -114,7 +114,7 @@ def pred() -> np.ndarray:
     print("\n✅ prediction done: ", y_pred, y_pred.shape, "\n")
 
 if __name__ == "__main__":
-    preprocess()
+    # preprocess()
     # train()
     # evaluate()
     pred()
