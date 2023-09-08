@@ -102,13 +102,13 @@ def pred() -> np.ndarray:
     print("\n⭐️ Use case: predict")
 
     # connect it to front end and API
-
     X_pred = api_request_pred()
 
     model = load_model()
     assert model is not None
 
     X_processed = preprocess_features_pred(X_pred)
+    print(X_processed.columns)
     y_pred = model.predict(X_processed)
 
     print("\n✅ prediction done: ", y_pred, y_pred.shape, "\n")
