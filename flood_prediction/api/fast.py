@@ -40,10 +40,10 @@ def pred() -> dict:
     y_pred = app.state.model.predict(X_processed)
 
     if y_pred[0][0] > 200:
-        return {'Status':'There is an alert of flood in your area'}
+        return {'Status':':x: There is an alert of flood in your area'}
 
     else:
-        return {'Status':'There is no danger forcasted in your área'}
+        return {'Status':f'✅ There is no danger forcasted in your area '}
 
 @app.get("/")
 def root():
