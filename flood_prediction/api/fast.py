@@ -1,15 +1,14 @@
 import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import tensorflow as tf
 
-# should I add this line?
-from flood_prediction.ml_logic.preprocessor import preprocess_features
-# from taxifare.ml_logic.registry import load_model
+from flood_prediction.ml_logic.preprocessor import preprocess_features_pred
+from flood_prediction.ml_logic.registry import load_model
+from flood_prediction.ml_logic.data_prep import api_request_pred
 
 app = FastAPI()
 
-# we need working on "load_model" function
-##app.state.model = load_model()
 
 # Allowing all middleware is optional, but good practice for dev purposes
 app.add_middleware(
@@ -20,50 +19,35 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# http://127.0.0.1:8000/forecast?pickup_datetime=2012-10-06 12:10:20&pickup_longitude=40.7614327&pickup_latitude=-73.9798156&dropoff_longitude=40.6513111&dropoff_latitude=-73.8803331&passenger_count=2
+app.state.model = load_model()
+
+assert app.state.model is not None
+
 @app.get("/forecast")
-def predict(
-        date: str,
-        temperature: float,
-        rain: float,
-        surface_pressure: float,
-        radiation: float,
-        windspeed: float,
-        winddirection: float,
-        soil_moisture_0_1cm: float,
-        soil_moisture_1_3cm: float,
-        soil_moisture_3_9cm: float,
-        soil_moisture_9_27cm: float
-    ):
+def pred() -> dict:
     """
-    Make a forecast (we decide days before and after current date).
+    Make a prediction of river discharge using the latest trained model
     """
-    # making prediction
-    X_pred = pd.DataFrame(dict(
-        date= date,
-        temperature= temperature,
-        rain= rain,
-        surface_pressure= surface_pressure,
-        radiation= radiation,
-        windspeed= windspeed,
-        winddirection= winddirection,
-        soil_moisture_0_1cm= soil_moisture_0_1cm,
-        soil_moisture_1_3cm= soil_moisture_1_3cm,
-        soil_moisture_3_9cm= soil_moisture_3_9cm,
-        soil_moisture_9_27cm= soil_moisture_9_27cm
-    ))
 
-    X_pred = preprocess_features(X_pred)
+    print("\n⭐️ Use case: predict")
 
-    # not done yet
-    #y_pred = app.state.model.predict(X_pred)
+    # connect it to front end and API
 
-    return {"fare_amount": round(float(y_pred[0][0]), 2)}
+    X_pred = api_request_pred()
 
+    X_processed = preprocess_features_pred(X_pred)
+    X_processed = tf.expand_dims(X_processed, axis=0)
+    y_pred = app.state.model.predict(X_processed)
+
+    if y_pred[0][0] > 200:
+        return {'Status':'There is an alert of flood in your area'}
+
+    else:
+        return {'Status':'There is no danger forcasted in your área'}
 
 @app.get("/")
 def root():
-    # return {"message": "Welcome to the TaxiFareModel API",
-    #         "documentation": "http://127.0.0.1:8000/docs",
-    #         "predict_url": "http://127.0.0.1:8000/predict"}
-    return {'greeting': 'Hello'}
+
+    return {"message": "Welcome to the Flood Forecast API",
+             "documentation": "",
+             "predict_url": ""}
