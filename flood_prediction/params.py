@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 ##################  VARIABLES  ##################
 MODEL_TARGET = os.environ.get("MODEL_TARGET")
@@ -24,3 +25,19 @@ SEQUENCE_STRIDE = os.environ.get("SEQUENCE_STRIDE")
 ##################  CONSTANTS  #####################
 LOCAL_DATA_PATH = os.path.join(os.path.expanduser('~'), ".lewagon", "flood_forecast", "data")
 LOCAL_REGISTRY_PATH =  os.path.join(os.path.expanduser('~'), ".lewagon", "flood_forecast", "training_outputs")
+
+DTYPES_RAW = {
+    "date": "datetime64",
+    "T(degC)": "float64",
+    "rain(mm)": "float64",
+    "surf_press(hPa)": "float64",
+    "wind_s(km/h)": "float64",
+    "wind_dir(deg)": "float64",
+    "soil_moist_0_to_7cm(m3)": "float64",
+    "soil_moist_7_to_28cm(m3)": "float64",
+    "radiation(W/m2)": "float64",
+    "river_discharge(m3/s)": "float64",
+    "target": "int64"
+}
+
+DTYPES_PROCESSED = np.float32

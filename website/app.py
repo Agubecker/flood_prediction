@@ -35,7 +35,7 @@ def flood_api_request(TALAGANTE_LAT, TALAGANTE_LON):
 
     return df
 
-def api_request_pred(TALAGANTE_LAT, TALAGANTE_LON):
+def api_request_prediction(TALAGANTE_LAT, TALAGANTE_LON):
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {

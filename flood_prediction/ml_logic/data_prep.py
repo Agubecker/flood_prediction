@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 import numpy as np
 from flood_prediction.ml_logic.preprocessor import preprocess_features
-from params import *
+from flood_prediction.params import *
 from pathlib import Path
 from google.cloud import bigquery
 
@@ -63,6 +63,8 @@ def get_weather_data() ->pd.DataFrame:
 
     raw_data_weather = response_weather.json()
 
+    print(response_weather)
+
     df_weather = pd.DataFrame(data= raw_data_weather, columns= ['date', 'T(degC)', 'rain(mm)', 'surf_press(hPa)', 'wind_s(km/h)', 'wind_dir(deg)', 'soil_moist_0_to_7cm(m3)', 'soil_moist_7_to_28cm(m3)', 'radiation(W/m2)'])
 
     df_weather['date'] = raw_data_weather['hourly']['time']
@@ -101,7 +103,10 @@ def get_data_and_targets() -> pd.DataFrame:
                 '2015-08-05', '2015-08-06', '2015-08-07',
                 '2016-04-16', '2016-04-17', '2016-04-18',
                 '2023-06-22', '2023-06-23', '2023-06-24']
+    print("Getting Weather Data")
     df_weather = get_weather_data()
+
+    print("Getting Flood Data")
     df_flood = get_flood_data()
 
     df = pd.merge(df_weather, df_flood, how='left', left_index=True, right_index=True)
@@ -156,11 +161,11 @@ def train_test_split(fold:pd.DataFrame,
     """
 
     # TRAIN SET
-    last_train_idx = round(train_test_ratio * len(fold))
+    last_train_idx = round(float(train_test_ratio) * len(fold))
     fold_train = fold.iloc[0:last_train_idx, :]
 
     # TEST SET
-    first_test_idx = last_train_idx - input_length
+    first_test_idx = last_train_idx - int(input_length)
     fold_test = fold.iloc[first_test_idx:, :]
 
 
@@ -176,11 +181,11 @@ def get_data_with_cache(
     """
     if cache_path.is_file():
         print("\nLoad data from local CSV...")
-        df = pd.read_csv(cache_path, header='infer' if data_has_header else None)
+        df = pd.read_csv(cache_path, header='infer' if data_has_header else None, dtype=DTYPES_RAW)
     else:
         print("\nLoad data from API server...")
         df = get_data_and_targets()
-        df = preprocess_features()
+        #df = preprocess_features()
 
         # Store as CSV if the API returned at least one valid line
         if df.shape[0] > 1:
@@ -249,24 +254,28 @@ def get_X_y_strides(fold: pd.DataFrame, input_length: int, output_length: int, h
     """
     X, y = [], []
 
-    for i in range(0, len(fold), sequence_stride):
+    for i in range(0, len(fold), int(sequence_stride)):
         # Exits the loop as soon as the last fold index would exceed the last index
-        if (i + input_length + output_length + horizon) >= len(fold):
+        if (i + int(input_length) + int(output_length) + int(horizon)) >= len(fold):
             break
-        X_i = fold.iloc[i:i + input_length, :]
-        y_i = fold.iloc[i + input_length + horizon - 1:i + input_length + horizon - 1 + output_length, :][[TARGET]]
+        X_i = fold.iloc[i:i + int(input_length), :]
+        y_i = fold.iloc[i + int(input_length) + int(horizon) - 1:i + int(input_length) + int(horizon) - 1 + int(output_length), :]#[[TARGET]]
+
+        # Asumo que el 13 es river_discharge
+        y_i = y_i.iloc[:, [13]]
+
         X.append(X_i)
         y.append(y_i)
 
     return (np.array(X), np.array(y))
 
-def api_request_pred(TALAGANTE_LAT, TALAGANTE_LON):
+def api_request_pred():
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {
         "latitude": TALAGANTE_LAT,
         "longitude": TALAGANTE_LON,
-        "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27, cmshortwave_radiation",
+        "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27cm,shortwave_radiation",
         "past_days": "14",
         "timezone": "auto"
     }
@@ -275,4 +284,20 @@ def api_request_pred(TALAGANTE_LAT, TALAGANTE_LON):
 
     data = response.json()
 
-    return data
+    df_weather = pd.DataFrame(data= data, columns= ['date', 'T(degC)', 'rain(mm)', 'surf_press(hPa)', 'wind_s(km/h)', 'wind_dir(deg)', 'soil_moisture_0_1cm(m3)', 'soil_moisture_1_3cm(m3)','soil_moisture_3_9cm(m3)','soil_moisture_9_27cm(m3)', 'radiation(W/m2)'])
+
+    df_weather['date'] = data['hourly']['time']
+    df_weather['T(degC)'] = data['hourly']['temperature_2m']
+    df_weather['rain(mm)'] = data['hourly']['rain']
+    df_weather['surf_press(hPa)'] = data['hourly']['surface_pressure']
+    df_weather['wind_s(km/h)'] = data['hourly']['windspeed_10m']
+    df_weather['wind_dir(deg)'] = data['hourly']['winddirection_10m']
+    df_weather['soil_moisture_0_1cm(m3)'] = data['hourly']['soil_moisture_0_1cm']
+    df_weather['soil_moisture_1_3cm(m3)'] = data['hourly']['soil_moisture_1_3cm']
+    df_weather['soil_moisture_3_9cm(m3)'] = data['hourly']['soil_moisture_3_9cm']
+    df_weather['soil_moisture_9_27cm(m3)'] = data['hourly']['soil_moisture_9_27cm']
+    df_weather['radiation(W/m2)'] = data['hourly']['shortwave_radiation']
+
+    df_weather['date'] = pd.to_datetime(df_weather['date'])
+
+    return df_weather

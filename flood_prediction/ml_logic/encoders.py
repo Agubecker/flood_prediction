@@ -64,3 +64,19 @@ def transform_time_features(df: pd.DataFrame) -> pd.DataFrame:
     df['year_cos'] = np.cos(timestamps_s * (2 * np.pi / year))
 
     return df
+
+def transform_soil_moisture_features_pred(df: pd.DataFrame) -> pd.DataFrame:
+    """Joining soil moisture features into one column and dropping the other four
+
+    Keyword arguments:
+    df -- dataframe with soil moisture features
+    Return: pandas dataframe with soil moisture features joined into one column
+    """
+    df['soil_moist_0_to_28cm(m3)'] = ((df['soil_moisture_0_1cm(m3)'] +
+                                       df['soil_moisture_1_3cm(m3)'] +
+                                       df['soil_moisture_3_9cm(m3)'] +
+                                       df['soil_moisture_9_27cm(m3)']) / 4)
+
+    df.drop(['soil_moisture_0_1cm(m3)', 'soil_moisture_1_3cm(m3)','soil_moisture_3_9cm(m3)','soil_moisture_9_27cm(m3)' ], axis=1, inplace=True)
+
+    return df

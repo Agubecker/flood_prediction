@@ -2,22 +2,20 @@ import pandas as pd
 import numpy as np
 from dateutil.parser import parse
 
-
 from flood_prediction.params import *
 from pathlib import Path
 
-# add this files to ml_logic folder
-from flood_prediction.ml_logic.data_prep import get_X_y_strides, get_folds, train_test_split, get_data_with_cache
-from flood_prediction.ml_logic.model import init_model, compile_model, fit_model, evaluate_model
-from flood_prediction.ml_logic.preprocessor import preprocess_features
-from flood_prediction.ml_logic.registry import load_model, save_model, save_results #from flood_prediction.registry import load_model, save_model, save_results
-#from flood_prediction.registry import mlflow_run, mlflow_transition_model
+from flood_prediction.ml_logic.data_prep import api_request_pred, get_X_y_strides, get_folds, train_test_split, get_data_with_cache
+from flood_prediction.ml_logic.model import init_model, fit_model
+from flood_prediction.ml_logic.preprocessor import preprocess_features, preprocess_features_pred
+from flood_prediction.ml_logic.registry import load_model, save_model, save_results
 
 def preprocess() -> None:
     """
     - Getting raw dataset from data_prep.py (In a future should be from BQ)
     - Process data
     """
+    print("\n⭐️ Use case: preprocess")
     # Retriving data
     data_query_cache_path = Path(LOCAL_DATA_PATH).joinpath("raw", f"data_raw.csv")
     df = get_data_with_cache(cache_path=data_query_cache_path)
@@ -48,9 +46,6 @@ def train() -> float:
     print("\n⭐️ Use case: train")
     print("\nLoading preprocessed validation data...")
 
-    min_date = parse(min_date).strftime('%Y-%m-%d')
-    max_date = parse(max_date).strftime('%Y-%m-%d')
-
     # Load processed data using `get_data_with_cache` in chronological order
     data_processed_cache_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"data_processed.csv")
 
@@ -65,6 +60,9 @@ def train() -> float:
 
     # Create (X_train, y_train, X_test, y_val)
     (whole_train, whole_test) = train_test_split(data_processed, TRAIN_TEST_RATIO, INPUT_LENGTH)
+    # print(whole_train.dtypes)
+    # print(whole_train.columns)
+    # print(whole_train)
     X_train, y_train = get_X_y_strides(whole_train, INPUT_LENGTH, OUTPUT_LENGTH, HORIZON, SEQUENCE_STRIDE)
     # X_test, y_test = get_X_y_strides(whole_test, INPUT_LENGTH, OUTPUT_LENGTH, HORIZON, SEQUENCE_STRIDE)
 
@@ -96,41 +94,24 @@ def train() -> float:
 def evaluate():
     pass
 
-def pred(X_pred: pd.DataFrame = None) -> np.ndarray:
+def pred() -> np.ndarray:
     """
     Make a prediction using the latest trained model
     """
 
     print("\n⭐️ Use case: predict")
 
-    # api_request_pred() in order to get past weather
-    # preprocess_features_forecast() in order to preprocess it
     # connect it to front end and API
 
-    if X_pred is None:
-        X_pred = pd.DataFrame(dict(
-        date= date,
-        temperature= temperature,
-        rain= rain,
-        surface_pressure= surface_pressure,
-        radiation= radiation,
-        windspeed= windspeed,
-        winddirection= winddirection,
-        soil_moisture_0_1cm= soil_moisture_0_1cm,
-        soil_moisture_1_3cm= soil_moisture_1_3cm,
-        soil_moisture_3_9cm= soil_moisture_3_9cm,
-        soil_moisture_9_27cm= soil_moisture_9_27cm
-    ))
+    X_pred = api_request_pred()
 
     model = load_model()
     assert model is not None
 
-    X_processed = preprocess_features(X_pred)
+    X_processed = preprocess_features_pred(X_pred)
     y_pred = model.predict(X_processed)
 
     print("\n✅ prediction done: ", y_pred, y_pred.shape, "\n")
-
-    return y_pred
 
 if __name__ == "__main__":
     preprocess()
