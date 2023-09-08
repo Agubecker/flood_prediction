@@ -27,5 +27,6 @@ def preprocess_features_pred(df: pd.DataFrame) -> pd.DataFrame:
     df = transform_wind_features(df)
     df = transform_time_features(df)
 
-
+    print("Pre processing features pred")
+    print(df.head())
     return df
