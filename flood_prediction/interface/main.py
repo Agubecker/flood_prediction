@@ -60,11 +60,11 @@ def train() -> float:
 
     # Create (X_train, y_train, X_test, y_val)
     (whole_train, whole_test) = train_test_split(data_processed, TRAIN_TEST_RATIO, INPUT_LENGTH)
-    # print(whole_train.dtypes)
-    # print(whole_train.columns)
-    # print(whole_train)
     X_train, y_train = get_X_y_strides(whole_train, INPUT_LENGTH, OUTPUT_LENGTH, HORIZON, SEQUENCE_STRIDE)
     # X_test, y_test = get_X_y_strides(whole_test, INPUT_LENGTH, OUTPUT_LENGTH, HORIZON, SEQUENCE_STRIDE)
+
+    print(X_train.dtype)
+    print(y_train.dtype)
 
     # Train model using `model.py`
     model = load_model()
