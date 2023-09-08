@@ -115,6 +115,6 @@ def pred() -> np.ndarray:
 
 if __name__ == "__main__":
     preprocess()
-    train()
+    # train()
     # evaluate()
     pred()
