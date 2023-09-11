@@ -283,8 +283,8 @@ def get_flood_data_pred() -> pd.DataFrame:
         "latitude": TALAGANTE_LAT,
         "longitude": TALAGANTE_LON,
         "daily": "river_discharge",
-        "past_days": "14",
-        "forecast_days":"1",
+        "past_days": "13",
+        "forecast_days":"2", # we're using 2 here in order to get the 24hs from today and after we delete the last row (tommorow)
         "models": "seamless_v4"
     }
 
@@ -302,6 +302,8 @@ def get_flood_data_pred() -> pd.DataFrame:
     df_flood['river_discharge(m3/s)'].interpolate(method='linear', inplace=True)
 
     df_flood = df_flood.resample('H').ffill()
+    # deleting last row
+    df_flood = df_flood[:-1]
 
     return df_flood
 
@@ -312,7 +314,7 @@ def get_weather_data_pred():
         "latitude": TALAGANTE_LAT,
         "longitude": TALAGANTE_LON,
         "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27cm,shortwave_radiation",
-        "past_days": "14",
+        "past_days": "13",
         "forecast_days":"1",
         "timezone": "auto"
     }
@@ -335,22 +337,24 @@ def get_weather_data_pred():
     df_weather['soil_moisture_9_27cm(m3)'] = data['hourly']['soil_moisture_9_27cm']
     df_weather['radiation(W/m2)'] = data['hourly']['shortwave_radiation']
 
-    df_weather['date'] = pd.to_datetime(df_weather['date'])
+    df_weather.set_index('date', inplace=True)
+    df_weather.index = pd.to_datetime(df_weather.index)
 
     return df_weather
 
 def api_request_pred():
     print("Getting Weather Data")
     df_weather = get_weather_data_pred()
-    print(df_weather.head())
+    print(df_weather.shape)
 
 
     print("Getting Flood Data")
     df_flood = get_flood_data_pred()
-    print(df_flood.head())
+    print(df_flood.shape)
 
     print("Merging both dfs")
     df = pd.merge(df_weather, df_flood, how='left', left_index=True, right_index=True)
-    print(df.head())
+    df.reset_index(inplace=True)
+    print(df.shape)
 
     return df
