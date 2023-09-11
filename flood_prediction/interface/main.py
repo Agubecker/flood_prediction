@@ -13,7 +13,7 @@ from flood_prediction.ml_logic.registry import load_model, save_model, save_resu
 
 def preprocess() -> None:
     """
-    - Getting raw dataset from data_prep.py (In a future should be from BQ)
+    - Getting raw dataset from data_prep.py
     - Process data
     """
     print("\n⭐️ Use case: preprocess")

@@ -22,7 +22,7 @@ def init_model(X_train, y_train):
     model.add(layers.LSTM(64,
                           activation='tanh',
                           return_sequences = False,
-                          #kernel_regularizer=L1L2(l1=0.05, l2=0.05),
+                          kernel_regularizer=L1L2(l1=0.05, l2=0.05),
                           ))
 
     # Hidden Dense Layer that we are regularizing
