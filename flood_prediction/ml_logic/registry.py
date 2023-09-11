@@ -81,7 +81,7 @@ def load_model() -> keras.Model:
             return None
 
         # most_recent_model_path_on_disk = sorted(local_model_paths)[-1]
-        most_recent_model_path_on_disk = os.path.join(local_model_directory, "model_dummy") # change it here to select another model
+        most_recent_model_path_on_disk = os.path.join(local_model_directory, "model_paper_17.2") # change it here to select another model
 
         print(f"\nLoad latest model from disk...")
 
