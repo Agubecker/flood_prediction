@@ -1,6 +1,11 @@
 raw_data/
 .env
 
+# Cache
+*.pyc
+__pycache__/
+.cache/
+
 # OS generated files #
 ######################
 .DS_Store
