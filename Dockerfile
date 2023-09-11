@@ -1,5 +1,5 @@
 # We will use Docker base image from tensorflow
-FROM tensorflow/tensorflow:2.10.0
+FROM python:3.10.6-buster
 
 WORKDIR /prod
 
@@ -12,8 +12,5 @@ RUN pip install -r requirements.txt
 COPY flood_prediction flood_prediction
 COPY setup.py setup.py
 RUN pip install .
-
-COPY Makefile Makefile
-RUN make reset_local_files
 
 CMD uvicorn flood_prediction.api.fast:app --host 0.0.0.0 --port $PORT
