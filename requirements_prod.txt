@@ -1,0 +1,9 @@
+
+pandas==1.4.4
+matplotlib==3.5.3
+numpy==1.24.4
+
+
+fastapi
+uvicorn
+pytz
