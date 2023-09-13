@@ -6,9 +6,12 @@ import tensorflow as tf
 from flood_prediction.ml_logic.preprocessor import preprocess_features_pred
 from flood_prediction.ml_logic.registry import load_model
 from flood_prediction.ml_logic.data_prep import api_request_pred
+from flood_prediction.params import *
 
 app = FastAPI()
 
+app.state.model = load_model()
+print(type(app.state.model))
 
 # Allowing all middleware is optional, but good practice for dev purposes
 app.add_middleware(
@@ -19,9 +22,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-app.state.model = load_model()
-
-assert app.state.model is not None
 
 @app.get("/forecast")
 def pred() -> dict:
@@ -31,23 +31,20 @@ def pred() -> dict:
 
     print("\n⭐️ Use case: predict")
 
-    # connect it to front end and API
-
-    X_pred = api_request_pred()
+    X_pred = api_request_pred(COORDS)
 
     X_processed = preprocess_features_pred(X_pred)
     X_processed = tf.expand_dims(X_processed, axis=0)
+
     y_pred = app.state.model.predict(X_processed)
 
-    if y_pred[0][0] > 200:
-        return {'Status':':x: There is an alert of flood in your area'}
+    res = y_pred[0][0]
 
-    else:
-        return {'Status':f'✅ There is no danger forcasted in your area '}
+    return {f'forecast': float(res)}
 
 @app.get("/")
 def root():
 
     return {"message": "Welcome to the Flood Forecast API",
-             "documentation": "",
-             "predict_url": ""}
+             "documentation": "/docs",
+             "predict_url": "/forecast"}
