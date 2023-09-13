@@ -6,7 +6,7 @@ from flood_prediction.params import *
 from pathlib import Path
 from google.cloud import bigquery
 
-def get_flood_data() -> pd.DataFrame:
+def get_flood_data(location, lat, lon) -> pd.DataFrame:
     """Getting river discharge data from Open Meteo API
 
     Keyword arguments:
@@ -17,11 +17,11 @@ def get_flood_data() -> pd.DataFrame:
     base_url_flood = "https://flood-api.open-meteo.com/v1/flood"
 
     params_flood = {
-        "latitude": TALAGANTE_LAT,
-        "longitude": TALAGANTE_LON,
+        "latitude": lat,
+        "longitude": lon,
         "daily": "river_discharge",
         "start_date": "1984-01-01",
-        "end_date": "2023-09-05",
+        "end_date": "2023-09-06", # we take 1 day more bc we need the 24hs complete
         "models": "seamless_v4"
     }
 
@@ -29,19 +29,20 @@ def get_flood_data() -> pd.DataFrame:
 
     raw_data_flood = response_flood.json()
 
-    df_flood = pd.DataFrame(data= raw_data_flood, columns=['date', 'river_discharge(m3/s)'])
+    df_flood = pd.DataFrame(data= raw_data_flood, columns=['date',
+                                                           f'river_discharge(m3/s)_{location}'])
 
     df_flood['date'] = raw_data_flood['daily']['time']
-    df_flood['river_discharge(m3/s)'] = raw_data_flood['daily']['river_discharge']
+    df_flood[f'river_discharge(m3/s)_{location}'] = raw_data_flood['daily']['river_discharge']
     df_flood.set_index('date', inplace=True)
     df_flood.index = pd.to_datetime(df_flood.index)
 
-    df_flood['river_discharge(m3/s)'].interpolate(method='linear', inplace=True)
+    df_flood[f'river_discharge(m3/s)_{location}'].interpolate(method='linear', inplace=True)
 
     df_flood = df_flood.resample('H').ffill()
     return df_flood
 
-def get_weather_data() ->pd.DataFrame:
+def get_weather_data(location, lat, lon) ->pd.DataFrame:
     """Getting hourly weather data from Open Meteo API
 
     Keyword arguments:
@@ -51,11 +52,11 @@ def get_weather_data() ->pd.DataFrame:
     base_url_weather = "https://archive-api.open-meteo.com/v1/archive"
 
     params_weather = {
-        "latitude": TALAGANTE_LAT,
-        "longitude": TALAGANTE_LON,
+        "latitude": lat,
+        "longitude": lon,
         "start_date": "1984-01-01",
         "end_date": "2023-09-05",
-        "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,shortwave_radiation",
+        "hourly": "temperature_2m,rain,surface_pressure,shortwave_radiation,windspeed_10m,winddirection_10m,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm",
         "timezone": "auto"
     }
 
@@ -63,19 +64,25 @@ def get_weather_data() ->pd.DataFrame:
 
     raw_data_weather = response_weather.json()
 
-    print(response_weather)
-
-    df_weather = pd.DataFrame(data= raw_data_weather, columns= ['date', 'T(degC)', 'rain(mm)', 'surf_press(hPa)', 'wind_s(km/h)', 'wind_dir(deg)', 'soil_moist_0_to_7cm(m3)', 'soil_moist_7_to_28cm(m3)', 'radiation(W/m2)'])
+    df_weather = pd.DataFrame(data= raw_data_weather, columns= ['date',
+                                                                f'T(degC)_{location}',
+                                                                f'rain(mm)_{location}',
+                                                                f'surf_press(hPa)_{location}',
+                                                                f'wind_s(km/h)_{location}',
+                                                                f'wind_dir(deg)_{location}',
+                                                                f'soil_moist_0_to_7cm(m3)_{location}',
+                                                                f'soil_moist_7_to_28cm(m3)_{location}',
+                                                                f'radiation(W/m2)_{location}'])
 
     df_weather['date'] = raw_data_weather['hourly']['time']
-    df_weather['T(degC)'] = raw_data_weather['hourly']['temperature_2m']
-    df_weather['rain(mm)'] = raw_data_weather['hourly']['rain']
-    df_weather['surf_press(hPa)'] = raw_data_weather['hourly']['surface_pressure']
-    df_weather['wind_s(km/h)'] = raw_data_weather['hourly']['windspeed_10m']
-    df_weather['wind_dir(deg)'] = raw_data_weather['hourly']['winddirection_10m']
-    df_weather['soil_moist_0_to_7cm(m3)'] = raw_data_weather['hourly']['soil_moisture_0_to_7cm']
-    df_weather['soil_moist_7_to_28cm(m3)'] = raw_data_weather['hourly']['soil_moisture_7_to_28cm']
-    df_weather['radiation(W/m2)'] = raw_data_weather['hourly']['shortwave_radiation']
+    df_weather[f'T(degC)_{location}'] = raw_data_weather['hourly']['temperature_2m']
+    df_weather[f'rain(mm)_{location}'] = raw_data_weather['hourly']['rain']
+    df_weather[f'surf_press(hPa)_{location}'] = raw_data_weather['hourly']['surface_pressure']
+    df_weather[f'wind_s(km/h)_{location}'] = raw_data_weather['hourly']['windspeed_10m']
+    df_weather[f'wind_dir(deg)_{location}'] = raw_data_weather['hourly']['winddirection_10m']
+    df_weather[f'soil_moist_0_to_7cm(m3)_{location}'] = raw_data_weather['hourly']['soil_moisture_0_to_7cm']
+    df_weather[f'soil_moist_7_to_28cm(m3)_{location}'] = raw_data_weather['hourly']['soil_moisture_7_to_28cm']
+    df_weather[f'radiation(W/m2)_{location}'] = raw_data_weather['hourly']['shortwave_radiation']
     df_weather.set_index('date', inplace=True)
     df_weather.index = pd.to_datetime(df_weather.index)
 
@@ -83,7 +90,7 @@ def get_weather_data() ->pd.DataFrame:
 
     return df_weather
 
-def get_data_and_targets() -> pd.DataFrame:
+def merge_flood_weather(location, lat, lon) -> pd.DataFrame:
     """Getting hourly weather and flood data from Open Meteo API, all together
 
     Keyword arguments:
@@ -103,16 +110,26 @@ def get_data_and_targets() -> pd.DataFrame:
                 '2015-08-05', '2015-08-06', '2015-08-07',
                 '2016-04-16', '2016-04-17', '2016-04-18',
                 '2023-06-22', '2023-06-23', '2023-06-24']
-    print("Getting Weather Data")
-    df_weather = get_weather_data()
 
-    print("Getting Flood Data")
-    df_flood = get_flood_data()
+    print(f"Getting Weather Data {location}")
+    df_weather = get_weather_data(location, lat, lon)
+    print("Shape: ", df_weather.shape)
+
+    print(f"Getting Flood Data {location}")
+    df_flood = get_flood_data(location, lat, lon)
+    print("Shape: ", df_flood.shape)
 
     df = pd.merge(df_weather, df_flood, how='left', left_index=True, right_index=True)
     df.reset_index(inplace=True)
-    df['target'] = 0
-    df['target'] = df['date'].dt.date.astype('str').isin(targets).astype('int')
+
+    return df
+
+def get_data_and_targets(COORDS) -> pd.DataFrame:
+    df = pd.DataFrame(columns=['date'])
+
+    for location, (lat, lon) in COORDS.items():
+        df_temp = merge_flood_weather(location, lat, lon)
+        df = df.merge(df_temp, on='date', how='outer')
 
     return df
 
@@ -269,7 +286,7 @@ def get_X_y_strides(fold: pd.DataFrame, input_length: int, output_length: int, h
 
     return (np.array(X), np.array(y))
 
-def get_flood_data_pred() -> pd.DataFrame:
+def get_flood_data_pred(location, lat, lon) -> pd.DataFrame:
     """Getting river discharge data from Open Meteo API
 
     Keyword arguments:
@@ -280,8 +297,8 @@ def get_flood_data_pred() -> pd.DataFrame:
     base_url_flood = "https://flood-api.open-meteo.com/v1/flood"
 
     params_flood = {
-        "latitude": TALAGANTE_LAT,
-        "longitude": TALAGANTE_LON,
+        "latitude": lat,
+        "longitude": lon,
         "daily": "river_discharge",
         "past_days": "13",
         "forecast_days":"2", # we're using 2 here in order to get the 24hs from today and after we delete the last row (tommorow)
@@ -292,14 +309,14 @@ def get_flood_data_pred() -> pd.DataFrame:
 
     raw_data_flood = response_flood.json()
 
-    df_flood = pd.DataFrame(data= raw_data_flood, columns=['date', 'river_discharge(m3/s)'])
+    df_flood = pd.DataFrame(data= raw_data_flood, columns=['date', f'river_discharge(m3/s)_{location}'])
 
     df_flood['date'] = raw_data_flood['daily']['time']
-    df_flood['river_discharge(m3/s)'] = raw_data_flood['daily']['river_discharge']
+    df_flood[f'river_discharge(m3/s)_{location}'] = raw_data_flood['daily']['river_discharge']
     df_flood.set_index('date', inplace=True)
     df_flood.index = pd.to_datetime(df_flood.index)
 
-    df_flood['river_discharge(m3/s)'].interpolate(method='linear', inplace=True)
+    df_flood[f'river_discharge(m3/s)_{location}'].interpolate(method='linear', inplace=True)
 
     df_flood = df_flood.resample('H').ffill()
     # deleting last row
@@ -307,12 +324,12 @@ def get_flood_data_pred() -> pd.DataFrame:
 
     return df_flood
 
-def get_weather_data_pred():
+def get_weather_data_pred(location, lat, lon):
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {
-        "latitude": TALAGANTE_LAT,
-        "longitude": TALAGANTE_LON,
+        "latitude": lat,
+        "longitude": lon,
         "hourly": "temperature_2m,rain,surface_pressure,windspeed_10m,winddirection_10m,soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27cm,shortwave_radiation",
         "past_days": "13",
         "forecast_days":"1",
@@ -323,33 +340,43 @@ def get_weather_data_pred():
 
     data = response.json()
 
-    df_weather = pd.DataFrame(data= data, columns= ['date', 'T(degC)', 'rain(mm)', 'surf_press(hPa)', 'wind_s(km/h)', 'wind_dir(deg)', 'soil_moisture_0_1cm(m3)', 'soil_moisture_1_3cm(m3)','soil_moisture_3_9cm(m3)','soil_moisture_9_27cm(m3)', 'radiation(W/m2)'])
+    df_weather = pd.DataFrame(data= data, columns= ['date',
+                                                    f'T(degC)_{location}',
+                                                    f'rain(mm)_{location}',
+                                                    f'surf_press(hPa)_{location}',
+                                                    f'wind_s(km/h)_{location}',
+                                                    f'wind_dir(deg)_{location}',
+                                                    f'soil_moisture_0_1cm(m3)_{location}',
+                                                    f'soil_moisture_1_3cm(m3)_{location}',
+                                                    f'soil_moisture_3_9cm(m3)_{location}',
+                                                    f'soil_moisture_9_27cm(m3)_{location}',
+                                                    f'radiation(W/m2)_{location}'])
 
     df_weather['date'] = data['hourly']['time']
-    df_weather['T(degC)'] = data['hourly']['temperature_2m']
-    df_weather['rain(mm)'] = data['hourly']['rain']
-    df_weather['surf_press(hPa)'] = data['hourly']['surface_pressure']
-    df_weather['wind_s(km/h)'] = data['hourly']['windspeed_10m']
-    df_weather['wind_dir(deg)'] = data['hourly']['winddirection_10m']
-    df_weather['soil_moisture_0_1cm(m3)'] = data['hourly']['soil_moisture_0_1cm']
-    df_weather['soil_moisture_1_3cm(m3)'] = data['hourly']['soil_moisture_1_3cm']
-    df_weather['soil_moisture_3_9cm(m3)'] = data['hourly']['soil_moisture_3_9cm']
-    df_weather['soil_moisture_9_27cm(m3)'] = data['hourly']['soil_moisture_9_27cm']
-    df_weather['radiation(W/m2)'] = data['hourly']['shortwave_radiation']
+    df_weather[f'T(degC)_{location}'] = data['hourly']['temperature_2m']
+    df_weather[f'rain(mm)_{location}'] = data['hourly']['rain']
+    df_weather[f'surf_press(hPa)_{location}'] = data['hourly']['surface_pressure']
+    df_weather[f'wind_s(km/h)_{location}'] = data['hourly']['windspeed_10m']
+    df_weather[f'wind_dir(deg)_{location}'] = data['hourly']['winddirection_10m']
+    df_weather[f'soil_moisture_0_1cm(m3)_{location}'] = data['hourly']['soil_moisture_0_1cm']
+    df_weather[f'soil_moisture_1_3cm(m3)_{location}'] = data['hourly']['soil_moisture_1_3cm']
+    df_weather[f'soil_moisture_3_9cm(m3)_{location}'] = data['hourly']['soil_moisture_3_9cm']
+    df_weather[f'soil_moisture_9_27cm(m3)_{location}'] = data['hourly']['soil_moisture_9_27cm']
+    df_weather[f'radiation(W/m2)_{location}'] = data['hourly']['shortwave_radiation']
 
     df_weather.set_index('date', inplace=True)
     df_weather.index = pd.to_datetime(df_weather.index)
 
     return df_weather
 
-def api_request_pred():
-    print("Getting Weather Data")
-    df_weather = get_weather_data_pred()
+def merge_flood_weather_pred(location, lat, lon):
+    print(f"Getting Weather Data {location}")
+    df_weather = get_weather_data_pred(location, lat, lon)
     print(df_weather.shape)
 
 
-    print("Getting Flood Data")
-    df_flood = get_flood_data_pred()
+    print(f"Getting Flood Data {location}")
+    df_flood = get_flood_data_pred(location, lat, lon)
     print(df_flood.shape)
 
     print("Merging both dfs")
@@ -358,3 +385,13 @@ def api_request_pred():
     print(df.shape)
 
     return df
+
+def api_request_pred(COORDS) -> pd.DataFrame:
+    X_pred = pd.DataFrame(columns=['date'])
+
+    for location, (lat, lon) in COORDS.items():
+        df_temp = merge_flood_weather_pred(location, lat, lon)
+        X_pred = X_pred.merge(df_temp, on='date', how='outer')
+        print(X_pred.shape)
+
+    return X_pred

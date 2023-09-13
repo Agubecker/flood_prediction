@@ -17,16 +17,15 @@ def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def preprocess_features_pred(df: pd.DataFrame) -> pd.DataFrame:
-    """Preprocessing prediction features (soil moisture is the only different function)
+    """Preprocessing features
 
     Keyword arguments:
     df -- dataframe with features
     Return: pandas dataframe with preprocessed features
     """
+    print("Pre processing features pred")
     df = transform_soil_moisture_features_pred(df)
     df = transform_wind_features(df)
     df = transform_time_features(df)
 
-    print("Pre processing features pred")
-    print(df.head())
     return df

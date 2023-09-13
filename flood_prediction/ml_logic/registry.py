@@ -5,7 +5,7 @@ import glob
 import zipfile
 
 from flood_prediction.params import *
-
+from flood_prediction.ml_logic.model import *
 from tensorflow import keras
 from google.cloud import storage
 
@@ -81,11 +81,11 @@ def load_model() -> keras.Model:
             return None
 
         # most_recent_model_path_on_disk = sorted(local_model_paths)[-1]
-        most_recent_model_path_on_disk = os.path.join(local_model_directory, "model_paper_17.2") # change it here to select another model
+        most_recent_model_path_on_disk = os.path.join(local_model_directory, "model_14.68_-321.84") # change it here to select another model
 
         print(f"\nLoad latest model from disk...")
 
-        latest_model = keras.models.load_model(most_recent_model_path_on_disk)
+        latest_model = keras.models.load_model(most_recent_model_path_on_disk, custom_objects={'nse':nse})
 
         print("✅ Model loaded from local disk")
 
@@ -96,7 +96,7 @@ def load_model() -> keras.Model:
 
         client = storage.Client()
         blobs = list(client.get_bucket(BUCKET_NAME).list_blobs())
-
+        print("###############################################")
         try:
             latest_blob = max(blobs, key=lambda x: x.updated)
             latest_model_path_to_save = os.path.join(LOCAL_REGISTRY_PATH, 'models', 'zip_models',latest_blob.name)
@@ -106,7 +106,7 @@ def load_model() -> keras.Model:
             extraction_path = os.path.join(LOCAL_REGISTRY_PATH, 'models', 'unzip_models')
             with zipfile.ZipFile(latest_model_path_to_save, 'r') as zip_ref:
                 zip_ref.extractall(extraction_path)
-                latest_model = keras.models.load_model(os.path.join(extraction_path, latest_blob.name.split('-')[0]))
+                latest_model = keras.models.load_model(os.path.join(extraction_path, latest_blob.name.split('-')[0]), custom_objects={'nse':nse})
 
             print("✅ Latest model downloaded from cloud storage")
 

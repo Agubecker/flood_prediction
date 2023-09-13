@@ -5,6 +5,7 @@ from tensorflow.keras.regularizers import L1L2
 from tensorflow.keras.layers.experimental.preprocessing import Normalization
 from tensorflow import keras
 from keras.callbacks import EarlyStopping
+from tensorflow.keras import backend as K
 
 def init_model(X_train, y_train):
     """
@@ -60,3 +61,16 @@ def fit_model(model: keras.Model, X_train, y_train, verbose=1) -> tuple[keras.Mo
                         verbose = verbose)
 
     return model, history
+
+def nse(y_true, y_pred):
+    """
+    Nash-Sutcliffe Efficiency (NSE) metric for TensorFlow/Keras.
+    Args:
+    y_true: True target values.
+    y_pred: Predicted values.
+    Returns:
+    NSE metric value.
+    """
+    numerator = K.sum(K.square(y_true - y_pred))
+    denominator = K.sum(K.square(y_true - K.mean(y_true)))
+    return 1 - (numerator / denominator)

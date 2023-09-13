@@ -5,6 +5,12 @@ import numpy as np
 MODEL_TARGET = os.environ.get("MODEL_TARGET")
 TALAGANTE_LAT = os.environ.get("TALAGANTE_LAT")
 TALAGANTE_LON= os.environ.get("TALAGANTE_LON")
+VERTIENTES_LAT = os.environ.get("VERTIENTES_LAT")
+VERTIENTES_LON= os.environ.get("VERTIENTES_LON")
+MAIPU_LAT = os.environ.get("MAIPU_LAT")
+MAIPU_LON= os.environ.get("MAIPU_LON")
+BELLAVISTA_LAT = os.environ.get("BELLAVISTA_LAT")
+BELLAVISTA_LON= os.environ.get("BELLAVISTA_LON")
 GCP_PROJECT = os.environ.get("GCP_PROJECT")
 GCP_REGION = os.environ.get("GCP_REGION")
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
@@ -41,3 +47,10 @@ DTYPES_RAW = {
 }
 
 DTYPES_PROCESSED = np.float32
+
+COORDS = {
+    "tal": [TALAGANTE_LAT, TALAGANTE_LON],
+    "ver": [VERTIENTES_LAT, VERTIENTES_LON],
+    "mai": [MAIPU_LAT, MAIPU_LON],
+    "bel": [BELLAVISTA_LAT, BELLAVISTA_LON]
+}
