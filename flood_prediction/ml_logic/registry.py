@@ -94,26 +94,38 @@ def load_model() -> keras.Model:
     elif MODEL_TARGET == "gcs":
         print(f"\nLoad latest model from GCS...")
 
-        client = storage.Client()
-        blobs = list(client.get_bucket(BUCKET_NAME).list_blobs())
-        print("###############################################")
+        # client = storage.Client()
+        # blobs = list(client.get_bucket(BUCKET_NAME).list_blobs())
+        # print("###############################################")
+        # try:
+        #     latest_blob = max(blobs, key=lambda x: x.updated)
+        #     latest_model_path_to_save = os.path.join(LOCAL_REGISTRY_PATH, 'models', 'zip_models',latest_blob.name)
+        #     latest_blob.download_to_filename(latest_model_path_to_save)
+
+        #     # Open the ZIP file
+        #     extraction_path = os.path.join(LOCAL_REGISTRY_PATH, 'models', 'unzip_models')
+        #     with zipfile.ZipFile(latest_model_path_to_save, 'r') as zip_ref:
+        #         zip_ref.extractall(extraction_path)
+        #         local_model_directory = os.path.join(LOCAL_REGISTRY_PATH, "models")
+        #         most_recent_model_path_on_disk = os.path.join(local_model_directory, "model_14.68_-321.84")
+        #         latest_model = keras.models.load_model(most_recent_model_path_on_disk, custom_objects={'nse':nse})
+
+        #     print("✅ Latest model downloaded from cloud storage")
+
+        #     return latest_model
+        # except:
+        #     print(f"\n❌ No model found in GCS bucket {BUCKET_NAME}")
+
         try:
-            latest_blob = max(blobs, key=lambda x: x.updated)
-            latest_model_path_to_save = os.path.join(LOCAL_REGISTRY_PATH, 'models', 'zip_models',latest_blob.name)
-            latest_blob.download_to_filename(latest_model_path_to_save)
-
-            # Open the ZIP file
-            extraction_path = os.path.join(LOCAL_REGISTRY_PATH, 'models', 'unzip_models')
-            with zipfile.ZipFile(latest_model_path_to_save, 'r') as zip_ref:
-                zip_ref.extractall(extraction_path)
-                latest_model = keras.models.load_model(os.path.join(extraction_path, latest_blob.name.split('-')[0]), custom_objects={'nse':nse})
-
-            print("✅ Latest model downloaded from cloud storage")
+            path_model = "model/model_14.68_-321.84"
+            latest_model = keras.models.load_model(path_model, custom_objects={'nse':nse})
+            print("✅ Latest model loaded")
 
             return latest_model
         except:
-            print(f"\n❌ No model found in GCS bucket {BUCKET_NAME}")
+            print(f"\n❌ No model found")
 
-            return None
+
+        return None
     else:
         return None

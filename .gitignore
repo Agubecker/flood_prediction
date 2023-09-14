@@ -1,6 +1,6 @@
 raw_data/
 .env
-
+SERVICE_ACCOUNT_JSON_FILE_CONTAINING_YOUR_SECRET_KEY.json
 # Cache
 *.pyc
 __pycache__/
