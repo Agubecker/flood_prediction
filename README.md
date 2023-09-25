@@ -49,6 +49,18 @@ And finally you can access our model's website at: https://flood-prediction.stre
 ## Demo
 [video.webm](https://github.com/Agubecker/flood_prediction/assets/86897297/50129c6d-89f7-43bb-8470-3b079e874f65)
 
+## Model performance
+![model_work](https://github.com/Agubecker/flood_prediction/assets/86897297/dd313967-ac91-4f24-b07e-6e538fd5e714)
+![model_zoom](https://github.com/Agubecker/flood_prediction/assets/86897297/cef1d4e2-e153-4340-803c-ecde13789b76)
+
+## Features Engineering: Before and after
+
+![vel_x_dir](https://github.com/Agubecker/flood_prediction/assets/86897297/7092a359-3ae8-4c04-bc65-9f67e8aecb27)
+![x_y](https://github.com/Agubecker/flood_prediction/assets/86897297/5362322e-3bf0-4622-a7bc-15af9bd08a49)
+
+
+
+
 
 ## Authors
 
